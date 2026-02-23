@@ -1,0 +1,27 @@
+meta {
+  name: PATCH blog -invalid- -empty description-
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{BASE_URL}}/blogs/1
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "description": ""
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

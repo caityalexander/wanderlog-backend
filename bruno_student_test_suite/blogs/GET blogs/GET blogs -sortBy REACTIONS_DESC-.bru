@@ -1,0 +1,60 @@
+meta {
+  name: GET blogs -sortBy REACTIONS_DESC-
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{BASE_URL}}/blogs?sortBy=REACTIONS_DESC
+  body: none
+  auth: none
+}
+
+params:query {
+  sortBy: REACTIONS_DESC
+}
+
+tests {
+  const expectedNumBlogs = 35;
+  const expectedCountBlogs = 35;
+  
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Valid blog list length", function() {
+      try {
+          var data = res.getBody();
+          expect(data.blogs.length).to.equal(expectedNumBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect number of blogs returned expected ${expectedNumBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+  
+  test("Valid blog count", function() {
+      try {
+          var data = res.getBody();
+          expect(data.count).to.equal(expectedCountBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect blogs count expected ${expectedCountBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+  
+  
+  var expectedOrdering = [1,16,2,3,5,15,17,18,19,20,4,6,7,8,9,10,11,12,13,14,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35];
+  
+  test("Valid ids and ordering", function() {
+      try {
+          var blogs = res.getBody().blogs;
+  //         console.log(`blogs [${blogs.map(b => b.blogId)}]`);
+          for (var i = 0; i<expectedOrdering.length; i++){
+              if (expectedOrdering[i] !== blogs[i].blogId){
+                  expect.fail("Invalid ordering of blogs");
+                  break;
+              }
+          }
+      } catch (err) {
+          expect.fail("Invalid ordering of blogs (ERROR OCCURRED)");
+      }
+  });
+}

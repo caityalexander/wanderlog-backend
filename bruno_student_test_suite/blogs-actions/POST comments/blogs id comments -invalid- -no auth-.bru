@@ -1,0 +1,23 @@
+meta {
+  name: blogs id comments -invalid- -no auth-
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/blogs/3/comments
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "comment": "Comment from Bruno"
+  }
+}
+
+tests {
+  test("Status code is 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+}

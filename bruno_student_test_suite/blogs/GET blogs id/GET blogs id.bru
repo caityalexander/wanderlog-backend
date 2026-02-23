@@ -1,0 +1,73 @@
+meta {
+  name: GET blogs id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/blogs/1
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected blog data structure", function() {
+      try{
+          var data = res.getBody();
+          expect(data.blogId).to.be.a("number");
+          expect(data.title).to.be.a("string");
+          expect(data.cityId).to.be.a("number");
+          expect(data.creationDate).to.be.a("string");
+          expect(data.creatorId).to.be.a("number");
+          expect(data.creatorFirstName).to.be.a("string");
+          expect(data.creatorLastName).to.be.a("string");
+          expect(data.series).to.be.a("string");
+          expect(data.numReactions).to.be.a("number");
+          expect(data.categoryIds).to.be.an("array");
+          expect(data.description).to.be.a("string");
+          expect(data.numberOfUniqueCommenters).to.be.a("number");
+      } catch(err) {
+          console.log(err);
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  var expectedData = {
+    "blogId": 1,
+    "title": "Welly Welly Welly!",
+    "cityId": 1,
+    "creatorId": 1,
+    "creatorFirstName": "Kristy",
+    "creatorLastName": "Lincoln",
+    "series": "Shopping like my life depends on it",
+    "numReactions": 3,
+    "categoryIds": [
+      1,
+      2,
+      3
+    ],
+    "description": "Wow what an experience, my trip to Wellington was amazing. The shopping scene in the central city was fire! Picked up so many new fits...",
+    "numberOfUniqueCommenters": 3
+  };
+  
+  test("Valid blog data", function() {
+      try{
+          var blog = res.getBody();
+          for(const [key, value] of Object.entries(expectedData)) {
+              if (Array.isArray(value)) {
+                  // special case for arrays since generalised equality check is deep and will fail on arrays
+                  expect(blog[key]).to.be.an("array").and.to.have.ordered.members(value);
+              } else {
+                  expect(blog[key]).to.equal(value);
+              }
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect blog data");
+      }
+  });
+}

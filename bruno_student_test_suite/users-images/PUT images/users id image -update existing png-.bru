@@ -1,0 +1,25 @@
+meta {
+  name: users id image -update existing png-
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{BASE_URL}}/users/1/image
+  body: file
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:file {
+  file: @file(sample.png) @contentType(image/png)
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}

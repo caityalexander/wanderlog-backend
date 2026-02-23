@@ -1,0 +1,278 @@
+{
+  "user_register": {
+    "type": "object",
+    "properties": {
+      "firstName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "lastName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "password": {
+        "type": "string",
+        "format": "password",
+        "minLength": 6,
+        "maxLength": 64
+      }
+    },
+    "required": [
+      "firstName",
+      "lastName",
+      "email",
+      "password"
+    ],
+    "additionalProperties": false
+  },
+  "user_login": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "format": "email",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "password": {
+        "type": "string",
+        "format": "password",
+        "minLength": 6,
+        "maxLength": 64
+      }
+    },
+    "required": [
+      "email",
+      "password"
+    ],
+    "additionalProperties": false
+  },
+  "user_edit": {
+    "type": "object",
+    "properties": {
+      "firstName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "lastName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "password": {
+        "type": "string",
+        "format": "password",
+        "minLength": 6,
+        "maxLength": 64
+      },
+      "currentPassword": {
+        "type": "string",
+        "format": "password",
+        "minLength": 6,
+        "maxLength": 64
+      }
+    },
+    "additionalProperties": false
+  },
+  "blog_search": {
+    "type": "object",
+    "properties": {
+      "startIndex": {
+        "type": "string",
+        "format": "integer"
+      },
+      "count": {
+        "type": "string",
+        "format": "integer"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "categoryIds": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "integer"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "integer"
+            }
+          }
+        ]
+      },
+      "cityIds": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "integer"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "integer"
+            }
+          }
+        ]
+      },
+      "numReactions": {
+        "type": "string",
+        "format": "integer"
+      },
+      "creatorId": {
+        "type": "string",
+        "format": "integer"
+      },
+      "sortBy": {
+        "type": "string",
+        "enum": [
+          "ALPHABETICAL_ASC",
+          "ALPHABETICAL_DESC",
+          "REACTIONS_ASC",
+          "REACTIONS_DESC",
+          "CREATED_ASC",
+          "CREATED_DESC"
+        ]
+      },
+      "interactedByMe": {
+        "type": "string",
+        "format": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "blog_post": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "series": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "nullable": true
+      },
+      "cityId": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "categoryIds": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueItems": true
+      }
+    },
+    "required": [
+      "title",
+      "description",
+      "cityId",
+      "categoryIds"
+    ],
+    "additionalProperties": false
+  },
+  "blog_patch": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "cityId": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "categoryIds": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueItems": true
+      },
+      "series": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "nullable": true
+      }
+    },
+    "additionalProperties": false
+  },
+  "blog_comment_post": {
+    "type": "object",
+    "properties": {
+      "comment": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "parentId": {
+        "type": "integer",
+        "minimum": 0,
+        "nullable": true
+      }
+    },
+    "required": [
+      "comment"
+    ],
+    "additionalProperties": false
+  },
+  "blog_react": {
+    "type": "object",
+    "properties": {
+      "reaction": {
+        "type": "string",
+        "enum": [
+          "REACTION_1",
+          "REACTION_2",
+          "REACTION_3",
+          "REACTION_4",
+          "REACTION_5"
+        ]
+      }
+    },
+    "required": [
+      "reaction"
+    ],
+    "additionalProperties": false
+  }
+}

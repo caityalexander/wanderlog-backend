@@ -1,0 +1,18 @@
+meta {
+  name: _helper -check blog deleted-
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{BASE_URL}}/blogs/16
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 404", function () {
+      expect(res.getStatus()).to.equal(404);
+  });
+  
+}

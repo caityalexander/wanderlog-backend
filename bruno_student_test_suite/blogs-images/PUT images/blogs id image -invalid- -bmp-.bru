@@ -1,0 +1,25 @@
+meta {
+  name: blogs id image -invalid- -bmp-
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{BASE_URL}}/blogs/1/image
+  body: file
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:file {
+  file: @file(sample.bmp) @contentType(image/bmp)
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

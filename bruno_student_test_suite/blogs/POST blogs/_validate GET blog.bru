@@ -1,0 +1,54 @@
+meta {
+  name: _validate GET blog
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{BASE_URL}}/blogs/{{CREATED_BLOG_ID}}
+  body: json
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  var expectedData = {
+    // id and creation date not tested
+    "blogId": 36,
+    "title": "A blog from bruno",
+    "cityId": 1,
+    "creationDate": "<string representing the current date i.e. 2026-01-27T02:35:32.000Z>",
+    "creatorId": 1,
+    "creatorFirstName": "Kristy",
+    "creatorLastName": "Lincoln",
+    "series": "Bruno",
+    "numReactions": 0,
+    "categoryIds": [
+      1, 4, 5
+    ],
+    "description": "A blog from bruno...",
+    "numberOfUniqueCommenters": 0
+  };
+  
+  test("Valid blog data", function() {
+      try{
+          var blog = res.getBody();
+          for(const [key, value] of Object.entries(expectedData)) {
+              if (Array.isArray(value)) {
+                  // special case for arrays since generalised equality check is deep and will fail on arrays
+                  expect(blog[key]).to.be.an("array").and.to.have.ordered.members(value);
+              } else if(key === "creationDate") {
+                  expect(blog[key]).to.be.a("string");
+              } else {
+                  expect(blog[key]).to.equal(value);
+              }
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect game data");
+      }
+  });
+}

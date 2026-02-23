@@ -1,0 +1,43 @@
+meta {
+  name: _helper blogs -check reactions-
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{BASE_URL}}/blogs/3/react
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  var expectedData = [
+    {
+      "userId": 6,
+      "reaction": "REACTION_2"
+    },
+    {
+      "userId": 1,
+      "reaction": "REACTION_1"
+    }
+  ];
+  
+  test("Valid reacts data", function() {
+      try{
+          var reacts = res.getBody();
+          for (const react of reacts) {
+            for(const [key, value] of Object.entries(expectedData.find(r => r.userId === react.userId))) {
+                // console.log('checking', key, '=', value)
+                expect(react[key]).to.equal(value);
+            }
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect reacts data");
+      }
+  });
+}

@@ -1,0 +1,22 @@
+meta {
+  name: DELETE blogs id
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{BASE_URL}}/blogs/16
+  body: none
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+}

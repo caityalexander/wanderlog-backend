@@ -1,0 +1,34 @@
+meta {
+  name: POST blog -invalid- -long description-
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "title": "A blog thats too descriptive...",
+    "description": "a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description a long description ",
+    "cityId": 1,
+    "series": "A series 123",
+    "categoryIds": [
+      1,
+      2
+    ]
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

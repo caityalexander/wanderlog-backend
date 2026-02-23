@@ -1,0 +1,18 @@
+meta {
+  name: DELETE blogs id -invalid- -no auth-
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{BASE_URL}}/blogs/16
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+  
+}

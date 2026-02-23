@@ -1,0 +1,62 @@
+meta {
+  name: GET blog categories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/blogs/categories
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected category data structure", function() {
+      try{
+          var data = res.getBody()[0];
+          expect(data.categoryId).to.be.a("number");
+          expect(data.name).to.be.a("string");
+      } catch(err) {
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  var expectedData = {
+      "categoryId": 1,
+      "name": "Arts"
+  };
+  
+  test("Valid category data (testing category 1)", function() {
+      try{
+          var data = res.getBody();
+          var category = data.filter(c => c.categoryId === expectedData.categoryId)[0];
+          for(const [key, value] of Object.entries(expectedData)) {
+                expect(category[key]).to.equal(value);
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect category data");
+      }
+  });
+  
+  var expectedOrdering = [1,8,12,18,14,5,6,11,19,13,17,15,20,10,3,16,2,4,7,9];
+  
+  test("Valid ids and ordering", function() {
+      try {
+          var categories = res.getBody();
+          // console.log(`categories [${categories.map(p => p.categoryId)}]`);
+          for (var i = 0; i<expectedOrdering.length; i++){
+              if (expectedOrdering[i] !== categories[i].categoryId){
+                  expect.fail("Invalid ordering of categories");
+                  break;
+              }
+          }
+      } catch (err) {
+          expect.fail("Invalid ordering of categories (ERROR OCCURRED)");
+      }
+  });
+}

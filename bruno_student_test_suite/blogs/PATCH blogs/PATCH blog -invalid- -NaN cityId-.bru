@@ -1,0 +1,27 @@
+meta {
+  name: PATCH blog -invalid- -NaN cityId-
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{BASE_URL}}/blogs/1
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "cityId": "NOT_A_CITY_ID"
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

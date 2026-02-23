@@ -1,0 +1,21 @@
+meta {
+  name: blogs id react -invalid- -invalid auth-
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{BASE_URL}}/blogs/3/react
+  body: none
+  auth: none
+}
+
+headers {
+  X-Authorization: NOT_A_VALID_TOKEN
+}
+
+tests {
+  test("Status code is 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+}

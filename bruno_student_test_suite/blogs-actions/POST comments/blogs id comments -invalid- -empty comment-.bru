@@ -1,0 +1,28 @@
+meta {
+  name: blogs id comments -invalid- -empty comment-
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{BASE_URL}}/blogs/3/comments
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+      "comment": "",
+      "parentId": 5
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

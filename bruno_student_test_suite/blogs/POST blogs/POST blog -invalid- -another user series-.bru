@@ -1,0 +1,33 @@
+meta {
+  name: POST blog -invalid- -another user series-
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "title": "A blog from bruno",
+    "description": "A blog from bruno...",
+    "series": "Coastal Living",
+    "cityId": 1,
+    "categoryIds": [
+      1
+    ]
+  }
+}
+
+tests {
+  test("Status code is 403", function () {
+      expect(res.getStatus()).to.equal(403);
+  });
+}

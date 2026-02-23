@@ -1,0 +1,45 @@
+meta {
+  name: POST blog
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "title": "A blog from bruno",
+    "description": "A blog from bruno...",
+    "series": "Bruno",
+    "cityId": 1,
+    "categoryIds": [
+      4, 5, 1
+    ]
+  }
+}
+
+tests {
+  test("Status code is 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("blogId is returned", function () {
+      expect(res.getBody().blogId).to.be.a("number")
+  })
+  
+  test("Set created_blog_id", function() {
+      const blogId = res.getBody().blogId;
+      console.log(`blogId: ${blogId}`)
+      if (typeof blogId !== "undefined") {
+          bru.setEnvVar("CREATED_BLOG_ID", blogId);
+      }
+  });
+}

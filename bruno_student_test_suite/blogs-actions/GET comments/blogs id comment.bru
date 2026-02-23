@@ -1,0 +1,59 @@
+meta {
+  name: blogs id comment
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{BASE_URL}}/blogs/1/comments
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected comment data structure", function() {
+      try{
+        var data = res.getBody();
+        expect(data).to.be.an("array").that.is.not.empty;
+  
+        data.forEach((item) => {
+            expect(item.commentId).to.be.a("number");
+            expect(item.commenterId).to.be.a("number");
+            expect(item.commenterFirstName).to.be.a("string");
+            expect(item.commenterLastName).to.be.a("string");
+            expect(item.comment).to.be.a("string");
+            expect(item.timestamp).to.be.a("string");
+            expect(item.parentId).to.satisfy(v => v === null || typeof v === "number");
+      });
+      } catch(err) {
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  var expectedData = {
+    "commentId": 3,
+    "commenterId": 5,
+    "commenterFirstName": "Fernando",
+    "commenterLastName": "Brown",
+    "comment": "I agree, the shopping is amazing.",
+    "timestamp": "2024-10-15T04:00:00.000Z",
+    "parentId": 1
+  }
+  
+  test("Valid comment data", function() {
+      try{
+          var comment = res.getBody()[0];
+          for(const [key, value] of Object.entries(expectedData)) {
+              console.log('checking', key, '=', value)
+              expect(comment[key]).to.equal(value);
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect reacts data");
+      }
+  });
+}

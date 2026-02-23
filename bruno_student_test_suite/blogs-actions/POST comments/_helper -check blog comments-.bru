@@ -1,0 +1,33 @@
+meta {
+  name: _helper -check blog comments-
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{BASE_URL}}/blogs/3/comments
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("new comment exists", function() {
+      try{
+          var new_comment = res.getBody().filter(r => r.commenterId === 1)[0];
+          expect(new_comment.commentId).to.be.a("number");
+          expect(new_comment.commenterId).to.equal(1);
+          expect(new_comment.commenterFirstName).to.equal("Kristy");
+          expect(new_comment.commenterLastName).to.equal("Lincoln");
+          expect(new_comment.parentId).to.equal(5);
+          expect(new_comment.comment).to.equal("A comment from Bruno");
+          expect(new_comment.timestamp).to.be.a("string");
+      } catch(err) {
+          console.log(err)
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+}

@@ -1,0 +1,31 @@
+meta {
+  name: POST blog -invalid- -empty categoryIds-
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "title": "A blog from bruno",
+    "description": "A blog from bruno...",
+    "series": "A series 123",
+    "cityId": 1,
+    "categoryIds": []
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: PATCH blogs id -invalid- -NaN id
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{BASE_URL}}/blogs/NOT_AN_ID
+  body: none
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

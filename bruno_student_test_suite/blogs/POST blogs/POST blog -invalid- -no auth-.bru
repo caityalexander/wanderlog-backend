@@ -1,0 +1,30 @@
+meta {
+  name: POST blog -invalid- -no auth-
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "A blog from a casual user",
+    "description": "Hope you aren't able to see this since I'm not allowed to create blogs",
+    "cityId": 1,
+    "series": "A series 123",
+    "categoryIds": [
+      1,
+      2
+    ]
+  }
+}
+
+tests {
+  test("Status code is 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+}

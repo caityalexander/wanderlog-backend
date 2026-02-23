@@ -1,0 +1,27 @@
+meta {
+  name: blogs id react -invalid- -DNE reaction-
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{BASE_URL}}/blogs/3/react
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "reaction": "NOT_A_REACTION"
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

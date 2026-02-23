@@ -1,0 +1,23 @@
+meta {
+  name: GET blogs -startIndex & invalid count-
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{BASE_URL}}/blogs?startIndex=3&count=-1
+  body: none
+  auth: none
+}
+
+params:query {
+  startIndex: 3
+  count: -1
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+  
+}

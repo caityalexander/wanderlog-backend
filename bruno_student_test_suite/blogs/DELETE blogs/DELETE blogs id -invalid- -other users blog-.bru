@@ -1,0 +1,22 @@
+meta {
+  name: DELETE blogs id -invalid- -other users blog-
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{BASE_URL}}/blogs/3
+  body: none
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+tests {
+  test("Status code is either 403 or 404", function () {
+      expect(res.getStatus()).to.be.oneOf([403, 404]);
+  });
+  
+}

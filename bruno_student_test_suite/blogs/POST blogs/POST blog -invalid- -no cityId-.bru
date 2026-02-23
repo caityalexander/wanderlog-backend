@@ -1,0 +1,33 @@
+meta {
+  name: POST blog -invalid- -no cityId-
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{BASE_URL}}/blogs
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "title": "A blog from a casual user",
+    "description": "Hope you aren't able to see this since I'm not allowed to create blogs",
+    "series": "A series 123",
+    "categoryIds": [
+      1,
+      2
+    ]
+  }
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

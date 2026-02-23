@@ -1,0 +1,27 @@
+meta {
+  name: PATCH blog -invalid- -series already set-
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{BASE_URL}}/blogs/1
+  body: json
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:json {
+  {
+    "series": "a new series"
+  }
+}
+
+tests {
+  test("Status code is oneOf 400 or 403", function () {
+      expect(res.getStatus()).to.be.oneOf([400, 403]);
+  });
+}

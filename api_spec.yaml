@@ -1,0 +1,1090 @@
+openapi: 3.0.0
+info:
+  title: "SENG365 2026: Travel Blog API"
+  version: 1.0.0
+  description: "This specification documents the Travel Blog API to be implemented for Assignment 1. This API provides all of the server-side functionality necessary in order to implement all the user stories for Assignment 2"
+servers:
+  - url: https://seng365.csse.canterbury.ac.nz/api/v1
+    description: "Reference server"
+  - url: http://localhost:4941/api/v1
+    description: "Your development server"
+tags:
+  - name: backdoor
+    description: "Development-only endpoints for resetting the database or querying it directly.<br><b>These endpoints have been implemented for you, any changes to their functionality may cause tests to break</b>."
+  - name: users
+    description: "Endpoints for registering, logging in, modifying, and retrieving user information"
+  - name: users.images
+    description: "Endpoints for retrieving, uploading and deleting user profile images"
+  - name: blogs
+    description: "Endpoints for retrieving, creating, modifying, and deleting blogs"
+  - name: blogs.actions
+    description: "Endpoints for liking and commenting on blogs"
+paths:
+  /reset:
+    post:
+      tags:
+        - backdoor
+      summary: "Force reset of database to original structure."
+      responses:
+        '200':
+          description: "OK"
+        '500':
+          description: "Internal Server Error"
+  /resample:
+    post:
+      tags:
+        - backdoor
+      summary: "Reload sample of data into database."
+      responses:
+        '201':
+          description: "Created"
+        '500':
+          description: "Internal Server Error"
+  /reload:
+    post:
+      tags:
+        - backdoor
+      summary: "Force reset of database to original structure and reload all sample data"
+      responses:
+        '201':
+          description: "Created"
+        '500':
+          description: "Internal Server Error"
+  /executesql:
+    post:
+      tags:
+        - backdoor
+      summary: "Execute any arbitrary SQL statement provided, and return the output from the database."
+      description: "This is an enormous security hole, and <b>wouldn't</b> be present in any real-world application. However, we're using it for testing purposes in this assignment"
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              title: SqlCommand
+              type: string
+              example: "SELECT * from users;"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SqlResult"
+                  - $ref: "#/components/schemas/SqlResultSet"
+        '500':
+          description: "Internal Server Error"
+  /users/register:
+    post:
+      tags:
+        - users
+      summary: "Register as a new user"
+      description: "Create a new user with the specified information.<ul><li>The email <b>must be syntactically valid</b> (e.g. it has to include an `@` <b>and</b> a top level domain for example `x@y.z`). Whether it is actually a registered email address will not be checked.</li><li>The email address <b>must not already be in use</b> (if it is in use the server should return a 403).</li><li>The password <b>must be at least 6 characters</b></li></ul>"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUser"
+      responses:
+        '201':
+          description: "Created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        '400':
+          description: "Bad Request."
+        '403':
+          description: "Forbidden.<ul><li>Email already in use</li></ul>"
+        '500':
+          description: "Internal Sever Error"
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: "Log in as an existing user."
+      description: "The response will contain a (unique) randomly-generated token that that client-side should store.<br>Whenever the client makes a request that requires authentication it should provide that same token as the value of the `X-Authorization` header in the request. The server will compare this to the value it has stored in the database to authenticate that request."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginUser"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '400':
+          description: "Bad Request."
+        '401':
+          description: "Unauthorized.<ul><li>Incorrect email/password</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /users/logout:
+    post:
+      tags:
+        - users
+      summary: "Log out the currently authorised user."
+      description: "User will be logged out and their token will no longer be acceptable for authenticated requests"
+      security:
+        - UserToken: []
+      responses:
+        '200':
+          description: "OK"
+        '401':
+          description: "Unauthorized.<ul><li>No authorization</li><li>Cannot log out if you are not authenticated</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /users/{id}:
+    parameters:
+      - name: "id"
+        description: "ID of the user"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+    get:
+      tags:
+        - users
+      summary: "Retrieve information about a user"
+      description: "The email field is only returned when the currently authenticated user is viewing their <b>own</b> details. Otherwise only the first and last names should be returned (this includes unauthenticated requests)."
+      security:
+        - {}
+        - UserToken: []
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/User"
+                  - type: object
+                    required:
+                      - firstName
+                      - lastName
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not Found.<ul><li>No user with specified ID</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    patch:
+      tags:
+        - users
+      summary: "Change a user's details"
+      description: "Update a user's information with that specified. Only accessible by the user themselves.<ul><li>The email must be syntactically valid and not in use as described in `/users/register`.</li><li>The `password` and `currentPassword` fields <b>can only be supplied when editing the password</b>.</li><li>The `currentPassword` <b>must match the users existing password</b>.</li><li>`currentPassword` and `password` <b>must not be the same</b>.</li><li>`currentPassword` and `password` <b>must be at least 6 characters</b></li></ul>. <i>Note: A subset of values can be supplied in the body (i.e. only changing the email)</i>"
+      security:
+        - UserToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchUser"
+      responses:
+        '200':
+          description: "OK"
+        '400':
+          description: "Bad request."
+        '401':
+          description: "Unauthorized<ul><li>Unauthorized (invalid authorization token)</li><li>Incorrect current password</li></ul>"
+        '403':
+          description: "Forbidden. <ul><li>Can not edit another user's information</li><li>Email is already in use</li><li>Identical current and new passwords</li></ul>"
+        '404':
+          description: "Not Found"
+        '500':
+          description: "Internal Server Error"
+  /users/{id}/series:
+    parameters:
+      - name: "id"
+        description: "ID of the user"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+    get:
+      tags:
+        - users
+      summary: "Retrieve a list of the user's series"
+      description: "Retrieve a list of the users created series based on their current blogs"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  example: "NZ Trip"
+                  nullable: false
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not Found. <ul><li>No user with specified ID</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /users/{id}/image:
+    parameters:
+      - name: "id"
+        description: "ID of the user"
+        in: path
+        required: true
+        schema:
+          type: array
+          minLength: 1
+          maxLength: 64
+          example: "NZ Trip"
+          nullable: false
+    get:
+      tags:
+        - users.images
+      summary: "Retrieve a user's profile image"
+      description: "The response MIME type will be one of `image/png`, `image/jpeg`, or `image/gif` depending on the filetype of the image being retrieved."
+      responses:
+        '200':
+          description: "OK"
+          content:
+            image:
+              schema:
+                $ref: "#/components/schemas/BinaryImageFile"
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not Found.<ul><li>No user with specified ID</li><li>User has no image</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    put:
+      tags:
+        - users.images
+      summary: "Set a user's profile photo"
+      description: "Only accessible to the user themselves. If the user already has a profile photo, the current profile photo will be replaced with it and a 200 OK response sent. If not, a 201 Created response will be sent.<br>If the file is a `.png`, the request will be sent with `Content-Type: image/png`. If the file is a `.jpeg` or `.jpg`, the request will be sent with `Content-Type: image/jpeg`. If the file is a `.gif`, the request will be sent with `Content-Type: image/gif`.<br>The request body should contain the raw binary content of the photo, i.e. it should not be in `multipart/form-data` format or contain any file metadata."
+      security:
+        - UserToken: []
+      requestBody:
+        content:
+          image/png:
+            schema:
+              $ref: "#/components/schemas/BinaryImageFile"
+          image/jpeg:
+            schema:
+              $ref: "#/components/schemas/BinaryImageFile"
+          image/gif:
+            schema:
+              $ref: "#/components/schemas/BinaryImageFile"
+        required: true
+      responses:
+        '200':
+          description: "OK (Image updated)."
+        '201':
+          description: "Created (New image created)."
+        '400':
+          description: "Bad Request. <ul><li>Invalid image supplied (possibly incorrect file type)</li></ul>"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden<ul><li>Can not change another user's profile photo</li></ul>"
+        '404':
+          description: "Not found."
+        '500':
+          description: "Internal Server Error"
+    delete:
+      tags:
+        - users.images
+      summary: "Delete a user's profile image"
+      security:
+        - UserToken: []
+      responses:
+        '200':
+          description: "OK"
+        '400':
+          description: "Bad Request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden. <ul><li>Can not delete another user's profile photo</li></ul>"
+        '404':
+          description: "Not Found."
+        '500':
+          description: "Internal Server Error"
+  /blogs:
+    get:
+      tags:
+        - blogs
+      summary: "View blogs"
+      description: "Get a list of blogs with a subset of information.</br>By default the blogs will be sorted from the most recently posted to the oldest. The list is then filtered, sorted and paginated using the relevant parameters provided in the request or specified defaults.</br>The returned object includes both a list of blogs that match the parameters and the total number of matching blogs (which may differ from the number in the list when accounting for pagination).<br><i>Note: Any ties when sorting must be broken using the blog's id ascending</i>"
+      parameters:
+        - in: query
+          name: startIndex
+          description: "Number of items to skip before returning results"
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/startIndex"
+        - in: query
+          name: count
+          description: "Number of items to include in results."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/count"
+        - in: query
+          name: q
+          description: "Only include blogs that have 'q' term in their title or description.<br><i>Works using `LIKE %q%` SQL check</i>."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/q"
+        - in: query
+          name: categoryIds
+          description: "Only include blogs that match one of the provided categoryIds. All ids <b>must</b> map to a known categoryId."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/categoryIds"
+        - in: query
+          name: cityIds
+          description: "Only include blogs that match one of the provided cityIds. All ids <b>must</b> map to a known cityId."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/cityIds"
+        - in: query
+          name: numReactions
+          description: "Only include blogs that have <b>greater than or equal to</b> the specified number of reactions"
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/numReactions"
+        - in: query
+          name: creatorId
+          description: "Only include blogs that were posted by the given user (id)."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/creatorId"
+        - in: query
+          name: sortBy
+          description: "Sort the blogs by the given property, according to the following rules:<ul><li>`ALPHABETICAL_ASC`: alphabetically by title, A-Z</li><li>`ALPHABETICAL_DESC`: alphabetically by title, Z-A</li><li>`REACTION_ASC`: by number of reactions ascending</li><li>`REACTIONS_DESC`: by number of reactions descending</li></li>`CREATED_ASC`: chronologically in order of creation date oldest-newest</li><li>`CREATED_DESC`: chronologically in order of creation date newest-oldest</li></ul>"
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/sortBy"
+        - in: query
+          name: interactedByMe
+          description: "Only include blogs that the current user has reacted to or commented on when `true` and requires sending the authorization token. If `false` is supplied it will be ignored and the authorization token will not be validated."
+          schema:
+            $ref: "#/components/schemas/BlogSearchRequest/properties/interactedByMe"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogSearchResponse"
+        '400':
+          description: "Bad Request"
+        '401':
+          description: "Unauthorized"
+        '500':
+          description: "Internal Server Error"
+    post:
+      tags:
+        - blogs
+      summary: "Add a blog"
+      description: "Create a new blog.<ul><li>A blog must have a non-empty `title` and `description`</li><li>A blog must have at least one category specified as a list of `categoryIds`, all of which <b>must</b> map to categories known by the server.</li><li>A blog must specify a city by `cityId` matching an existing city known by the server</li><li>A blog may optionally include a plain text series name. A blog may not reference a series that is already in use by another user (checks must be case insensitive, i.e. \"Backyard Trips\" == \"backyard trips\".</li></ul>"
+      security:
+        - UserToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostBlog"
+      responses:
+        '201':
+          description: "Created"
+          content:
+            application/json:
+              schema:
+                properties:
+                  blogId:
+                    $ref: "#/components/schemas/BlogOverview/properties/blogId"
+        '400':
+          description: "Bad Request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden. <ul><li>Another user has already used this series</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /blogs/{id}:
+    parameters:
+      - name: id
+        description: "The id of the blog"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/BlogOverview/properties/blogId"
+    get:
+      tags:
+        - blogs
+      summary: "Retrieve detailed information about a blog"
+      description: "Retrieve all information about a blog matching `id`"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not Fount.<ul><li>No blog with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    patch:
+      tags:
+        - blogs
+      summary: "Update an existing blog"
+      description: "Make changes to the basic attributes (`title`, `description`, `categoryIds`, `cityId`) of an existing blog. If a `series` exists on a blog it may <b>not</b> be updated, if attempted you must either return a 400 or 403 <i>However if the blog was created without a series, one may be added</i>.</br>Only accessible to the creator of the blog. <b>Provided parameters must meet the same requirements as creating a new blog</b>.</br>These basic values for a blog can be updated at any time, even if there are already comments or reactions left on the blog."
+      security:
+        - UserToken: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchBlog"
+      responses:
+        '200':
+          description: "OK"
+        '400':
+          description: "Bad Request."
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden. <ul><li>Only the creator of a blog may change it</li><li>May not change the series of a blog once it is set</li></ul>"
+        '404':
+          description: "Not Found. <ul><li>No blog found with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    delete:
+      tags:
+        - blogs
+      summary: "Delete a blog"
+      description: "Delete and existing blog. Only accessible to the creator of the blog. <b>Can not delete a blog once it has one or more comments</b> (reactions are not considered)."
+      security:
+        - UserToken: [ ]
+      responses:
+        '400':
+          description: "Bad Request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden.<ul><li>Only the creator of a blog may delete it</li><li>Can not delete a blog with one or more comments</li></ul>"
+        '404':
+          description: "Not Found.<ul><li>No blog found with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /blogs/categories:
+    get:
+      tags:
+        - blogs
+      summary: "Get all blog categories"
+      description: "Retrieve a list of all accepted categories for blogs."
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        '500':
+          description: "Internal Server Error"
+  /blogs/cities:
+    get:
+      tags:
+        - blogs
+      summary: "Get all blog cities"
+      description: "Retrieve a list of all accepted cities for blogs."
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        '500':
+          description: "Internal Server Error"
+  /blogs/{id}/react:
+    parameters:
+      - name: id
+        description: "The id of the blog"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/BlogOverview/properties/blogId"
+    get:
+      tags:
+        - blogs.actions
+      summary: "Get reactions to a blog"
+      description: "Get all the reactions for a blog"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/React"
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not found.<ul><li>No blog with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    post:
+      tags:
+        - blogs.actions
+      summary: "React to a blog"
+      description: "Allows a user to react to the specified blog. The `reaction` must be one of the values known by the server <ul><li>`REACTION_1`</li><li>`REACTION_2`</li><li>`REACTION_3`</li><li>`REACTION_4`</li><li>`REACTION_5`</li></ul>If a reaction already exists it is overridden with the new choice. A user may not react to their own blog."
+      security:
+        - UserToken: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogReact"
+      responses:
+        '200':
+          description: "OK"
+        '400':
+          description: "Bad request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden.<ul><li>Can not react to a blog you created.</li></ul>"
+        '404':
+          description: "Not found.<ul><li>No blog with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    delete:
+      tags:
+        - blogs.actions
+      summary: "Remove a reaction"
+      description: "Allows a user to remove their currently selected reaction for the specified blog."
+      security:
+        - UserToken: [ ]
+      responses:
+        '200':
+          description: "OK"
+        '400':
+          description: "Bad request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden.<ul><li>Can not remove a reaction when one doesn't exist.</li></ul>"
+        '404':
+          description: "Not found.<ul><li>No blog with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+  /blogs/{id}/comments:
+    parameters:
+      - name: id
+        description: "The id of the blog"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/BlogOverview/properties/blogId"
+    get:
+      tags:
+        - blogs.actions
+      summary: "Get all the comments on a blog"
+      description: "Get a list of all the comments left on a blog in reverse chronological order (from most recently posted to oldest) by `timestamp`.</br><i>A comment with a `null` `parentId` is considered to be directly on the blog. If `parentId` is provided then it is considered reply to that comment</i>"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlogComment"
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not Found. <ul><li>No blog found with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    post:
+      tags:
+        - blogs.actions
+      summary: "Comment on a blog"
+      description: "Add a comment to a blog or reply to an existing comment. A comment may only reply to another comment that is directly on the blog (i.e. comments can have replies, but repiles to comments can not be further replied to). A user may place any number of comments on a blog. The creator of a blog may comment on their own blog."
+      security:
+        - UserToken: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostBlogComment"
+      responses:
+        '201':
+          description: "Created"
+        '400':
+          description: "Bad Request."
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden. <ul><li>Cannot add comment to a comment that already has a parent.</li></ul>"
+        '404':
+          description: "Not Found. <ul><li>No blog found with id</ul></li>"
+        '500':
+          description: "Internal Server Error"
+  /blogs/{id}/image:
+    parameters:
+      - name: id
+        description: "The id of the blog"
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/BlogOverview/properties/blogId"
+    get:
+      tags:
+        - blogs.images
+      summary: "Get a blog's cover image"
+      description: "Gets the specified blog's cover image. The response MIME type will be either `image/png`, `image/jpeg`, or `image/gif`, depending on the file type of the image being retrieved."
+      responses:
+        '200':
+          description: "OK"
+          content:
+            image:
+              schema:
+                $ref: "#/components/schemas/BinaryImageFile"
+        '400':
+          description: "Bad Request"
+        '404':
+          description: "Not found.<ul><li>No blog with id</li><li>Blog has no image</li></ul>"
+        '500':
+          description: "Internal Server Error"
+    put:
+      tags:
+        - blogs.images
+      summary: "Set a blog cover image"
+      description: "Set the specified blog's cover image. Only available to the creator of the blog. If the blog already has a cover image, the current cover image will be replaced and a 200 OK response sent. If not, a 201 created response will be sent.<br>If the file is a `.png`, the request will be sent with `Content-Type: image/png`. If the file is a `.jpeg` or `.jpg`, the request will be sent with `Content-Type: image/jpeg`. If the file is a `.gif`, the request will be sent with `Content-Type: image/gif`. No other image types should be allowed. <br>The request body should contain the raw binary content of the photo, i.e. it should not be in `multipart/form-data` format or contain any file metadata."
+      security:
+        - UserToken: [ ]
+      requestBody:
+        content:
+          image/png:
+            schema:
+              $ref: '#/components/schemas/BinaryImageFile'
+          image/jpeg:
+            schema:
+              $ref: '#/components/schemas/BinaryImageFile'
+          image/gif:
+            schema:
+              $ref: '#/components/schemas/BinaryImageFile'
+        required: true
+      responses:
+        '200':
+          description: "OK (Image updated)."
+        '201':
+          description: "Created (Image added)."
+        '400':
+          description: "Bad Request"
+        '401':
+          description: "Unauthorized"
+        '403':
+          description: "Forbidden. <ul><li>Only the creator of a blog can change the hero image</li></ul>"
+        '404':
+          description: "Not Found. <ul><li>No blog found with id</li></ul>"
+        '500':
+          description: "Internal Server Error"
+components:
+  schemas:
+    SqlResult:
+      type: object
+      properties:
+        fieldCount:
+          type: integer
+          example: 0
+        affectedRows:
+          type: integer
+          example: 1
+        insertId:
+          type: integer
+          example: 1
+        serverStatus:
+          type: integer
+          example: 2
+        warningCount:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: "(Rows matched: 1 Changed: 0 Warnings 0)"
+        protocol41:
+          type: boolean
+          example: true
+        changedRows:
+          type: integer
+          example: 0
+    SqlResultSet:
+      type: array
+      items: {}
+    UserEmail:
+      title: UserEmail
+      type: object
+      properties:
+        email:
+          type: string
+          description: "<i>Must include an @ symbol and a top level domain i.e. \"x@y.z\"</i>"
+          minLength: 1
+          maxLength: 256
+          format: email
+          example: "adam@example.com"
+    UserPassword:
+      title: UserPassword
+      properties:
+        password:
+          type: string
+          minLength: 6
+          maxLength: 64
+          format: password
+          example: "password"
+    UserCurrentPassword:
+      title: UserCurrentPassword
+      properties:
+        currentPassword:
+          type: string
+          minLength: 6
+          maxLength: 64
+          format: password
+          example: "old_password"
+    User:
+      title: User
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/UserEmail"
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 64
+          example: "Jane"
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 64
+          example: "Doe"
+    RegisterUser:
+      title: RegisterUser
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - $ref: "#/components/schemas/UserPassword"
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+    LoginUser:
+      title: LoginUser
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/UserEmail"
+        - $ref: "#/components/schemas/UserPassword"
+      required:
+        - email
+        - password
+    RegisterResponse:
+      title: RegisterResponse
+      type: object
+      properties:
+        userId:
+          type: integer
+          minimum: 0
+          example: 11
+    LoginResponse:
+      title: LoginResponse
+      type: object
+      properties:
+        userId:
+          type: integer
+          minimum: 0
+          example: 11
+        token:
+          type: string
+          example: "JSkIEpXk0b2jLgDpRuKAjGwCbFnDM0Tj"
+    PatchUser:
+      title: PatchUser
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - $ref: "#/components/schemas/UserPassword"
+        - $ref: "#/components/schemas/UserCurrentPassword"
+    DateTimeInput:
+      title: DateTimeInput
+      description: A datetime expressed with no timezone, as either a date (yyyy-MM-dd) or date and time (yyyy-MM-dd hh:mm:ss.sss)
+      type: string
+      example: '2012-04-23 18:25:43'
+    DateTimeOutput:
+      title: DateTimeOutput
+      description: A UTC datetime expressed in ISO8601 format (yyyy-MM-ddThh:mm:ss.sssZ)
+      type: string
+      example: '2012-04-23T18:25:43.511Z'
+    BinaryImageFile:
+      type: string
+      format: binary
+      description: The raw content of the PNG, JPEG, or GIF image file.
+      example: (raw content of PNG, JPEG, or GIF image file)
+    Category:
+      title: Category
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          minimum: 0
+          example: 1
+          nullable: false
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          example: "Arts"
+          nullable: false
+    City:
+      title: City
+      type: object
+      properties:
+        cityId:
+          type: integer
+          minimum: 0
+          example: 1
+          nullable: false
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          example: "Wellington"
+          nullable: false
+    React:
+      title: React
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+        reaction:
+          $ref: "#/components/schemas/BlogReact/properties/reaction"
+    BlogSearchRequest:
+      title: BlogSearchRequest
+      type: object
+      properties:
+        startIndex:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 10
+        count:
+          type: integer
+          minimum: 0
+          example: 10
+        q:
+          type: string
+          minLength: 1
+          maxLength: 64
+          example: "Park"
+        categoryIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category/properties/categoryId"
+        cityIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/City/properties/cityId"
+        genreIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category/properties/categoryId"
+        platformIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/City/properties/cityId"
+        price:
+          type: integer
+          description: "Price is given as a integer representing cents"
+          minimum: 0
+          default: 0
+          example: 60
+        numReactions:
+          type: integer
+          description: "Minimum number of reactions to search blogs by"
+          minimum: 0
+          default: 0
+          example: 10
+        creatorId:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+        commenterId:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+        interactedByMe:
+          type: boolean
+          description: "true will show only blogs the user has reacted to or commented on"
+        sortBy:
+          type: string
+          enum:
+            - ALPHABETICAL_ASC
+            - ALPHABETICAL_DESC
+            - REACTIONS_ASC
+            - REACTIONS_DESC
+            - CREATED_ASC
+            - CREATED_DESC
+          default: CREATED_ASC
+    BlogSearchResponse:
+      title: BlogSearchResponse
+      type: object
+      properties:
+        blogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlogOverview"
+          nullable: false
+        count:
+          type: integer
+          minimum: 0
+          example: 15
+          nullable: false
+    BlogOverview:
+      title: BlogOverview
+      type: object
+      properties:
+        blogId:
+          type: integer
+          minimum: 0
+          example: 1
+          nullable: false
+        title:
+          type: string
+          example: "Is Te Papa the best museum in NZ?"
+          minLength: 1
+          maxLength: 128
+        cityId:
+          $ref: "#/components/schemas/City/properties/cityId"
+        creatorId:
+          $ref: "#/components/schemas/LoginResponse/properties/userId"
+        creatorFirstName:
+          $ref: "#/components/schemas/User/properties/firstName"
+        creatorLastName:
+          $ref: "#/components/schemas/User/properties/lastName"
+        numReactions:
+          type: number
+          description: "The number of total reactions"
+        categoryIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category/properties/categoryId"
+        series:
+          type: string
+          example: "Arts"
+          minLength: 1
+          maxLength: 64
+        creationDate:
+          $ref: "#/components/schemas/DateTimeOutput"
+    Blog:
+      title: Blog
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/BlogOverview"
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          example: "When I say an experience not to be missed I mean it. What a wonderful city ..."
+          nullable: false
+        numberOfUniqueCommenters:
+          type: number
+          description: "The number of unique commenters who have left a comment on the blog"
+          minimum: 0
+    PostBlog:
+      title: PostBlog
+      type: object
+      properties:
+        title:
+          $ref: "#/components/schemas/BlogOverview/properties/title"
+        description:
+          $ref: "#/components/schemas/Blog/properties/description"
+        series:
+          $ref: "#/components/schemas/BlogOverview/properties/series"
+        cityId:
+          $ref: "#/components/schemas/BlogOverview/properties/cityId"
+        categoryIds:
+          $ref: "#/components/schemas/BlogOverview/properties/categoryIds"
+      required:
+        - title
+        - description
+        - cityId
+        - categoryIds
+    PatchBlog:
+      title: PatchBlog
+      type: object
+      properties:
+        title:
+          $ref: "#/components/schemas/BlogOverview/properties/title"
+        description:
+          $ref: "#/components/schemas/Blog/properties/description"
+        cityId:
+          $ref: "#/components/schemas/BlogOverview/properties/cityId"
+        categoryIds:
+          $ref: "#/components/schemas/BlogOverview/properties/categoryIds"
+        series:
+          $ref: "#/components/schemas/BlogOverview/properties/series"
+    BlogComment:
+      title: BlogComment
+      type: object
+      properties:
+        commentId:
+          type: integer
+          minimum: 0
+          example: 1
+        commenterId:
+          type: integer
+          minimum: 0
+          example: 1
+        comment:
+          type: string
+          minLength: 1
+          maxLength: 512
+          nullable: false
+          example: "I really enjoyed it! What a great way to explore the ..."
+        commenterFirstName:
+          $ref: "#/components/schemas/User/properties/firstName"
+        commenterLastName:
+          $ref: "#/components/schemas/User/properties/lastName"
+        timestamp:
+          $ref: "#/components/schemas/DateTimeOutput"
+        parentId:
+          type: integer
+          minimum: 0
+          example: 1
+          nullable: true
+    PostBlogComment:
+      title: PostBlogComment
+      type: object
+      properties:
+        comment:
+          $ref: "#/components/schemas/BlogComment/properties/comment"
+        parentId:
+          $ref: "#/components/schemas/BlogComment/properties/parentId"
+      required:
+        - comment
+    BlogReact:
+      title: BlogReact
+      type: object
+      properties:
+        reaction:
+          type: string
+          enum:
+            - REACTION_1
+            - REACTION_2
+            - REACTION_3
+            - REACTION_4
+            - REACTION_5
+  securitySchemes:
+    UserToken:
+      type: apiKey
+      name: X-Authorization
+      in: header

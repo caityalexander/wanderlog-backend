@@ -1,0 +1,21 @@
+meta {
+  name: GET blogs -invalid- -creatorId NaN-
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{BASE_URL}}/blogs?creatorId=NOT_A_CREATORID
+  body: none
+  auth: none
+}
+
+params:query {
+  creatorId: NOT_A_CREATORID
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

@@ -1,0 +1,63 @@
+meta {
+  name: GET blog cities
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/blogs/cities
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected platform data structure", function() {
+      try{
+          var data = res.getBody()[0];
+          expect(data.cityId).to.be.a("number");
+          expect(data.name).to.be.a("string");
+      } catch(err) {
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  
+  var expectedData = {
+      "cityId": 1,
+      "name": "Wellington"
+  };
+  
+  test("Valid city data (testing city 1)", function() {
+      try{
+          var data = res.getBody();
+          var city = data.filter(c => c.cityId === expectedData.cityId)[0];
+          for(const [key, value] of Object.entries(expectedData)) {
+                expect(city[key]).to.equal(value);
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect city data");
+      }
+  });
+  
+  var expectedOrdering = [3,2,9,4,7,6,8,5,1];
+  
+  test("Valid ids and ordering", function() {
+      try {
+          var cities = res.getBody();
+          // console.log(`cities [${cities.map(p => p.cityId)}]`);
+          for (var i = 0; i<expectedOrdering.length; i++){
+              if (expectedOrdering[i] !== cities[i].cityId){
+                  expect.fail("Invalid ordering of platforms");
+                  break;
+              }
+          }
+      } catch (err) {
+          expect.fail("Invalid ordering of cities (ERROR OCCURRED)");
+      }
+  });
+}

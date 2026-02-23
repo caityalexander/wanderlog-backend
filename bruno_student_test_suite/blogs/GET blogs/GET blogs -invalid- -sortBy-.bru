@@ -1,0 +1,21 @@
+meta {
+  name: GET blogs -invalid- -sortBy-
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{BASE_URL}}/blogs?sortBy=NOT_A_SORT_BY
+  body: none
+  auth: none
+}
+
+params:query {
+  sortBy: NOT_A_SORT_BY
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

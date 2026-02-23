@@ -1,0 +1,25 @@
+meta {
+  name: GET blogs -invalid- -interactedByMe invalid auth-
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{BASE_URL}}/blogs?interactedByMe=true
+  body: none
+  auth: none
+}
+
+params:query {
+  interactedByMe: true
+}
+
+headers {
+  X-Authorization: NOT_AN_AUTH_TOKEN
+}
+
+tests {
+  test("Status code is 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+}

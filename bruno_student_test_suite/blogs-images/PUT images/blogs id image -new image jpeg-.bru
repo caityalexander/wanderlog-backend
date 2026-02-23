@@ -1,0 +1,25 @@
+meta {
+  name: blogs id image -new image jpeg-
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{BASE_URL}}/blogs/1/image
+  body: file
+  auth: none
+}
+
+headers {
+  X-Authorization: token
+}
+
+body:file {
+  file: @file(sample.jpg) @contentType(image/jpeg)
+}
+
+tests {
+  test("Status code is 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+}

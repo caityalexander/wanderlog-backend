@@ -1,0 +1,17 @@
+meta {
+  name: GET blogs id -invalid- -DNE id-
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{BASE_URL}}/blogs/999999
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 404", function () {
+      expect(res.getStatus()).to.equal(404);
+  });
+}

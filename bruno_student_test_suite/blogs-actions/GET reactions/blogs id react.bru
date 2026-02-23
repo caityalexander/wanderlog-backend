@@ -1,0 +1,57 @@
+meta {
+  name: blogs id react
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/blogs/1/react
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected react data structure", function() {
+      try{
+          var data = res.getBody()[0];
+          expect(data.userId).to.be.a("number");
+          expect(data.reaction).to.be.a("string");
+      } catch(err) {
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  var expectedData = [
+    {
+      "userId": 4,
+      "reaction": "REACTION_3"
+    },
+    {
+      "userId": 3,
+      "reaction": "REACTION_2"
+    },
+    {
+      "userId": 2,
+      "reaction": "REACTION_1"
+    }
+  ];
+  
+  test("Valid reacts data", function() {
+      try{
+          var reacts = res.getBody();
+          for (const react of reacts) {
+            for(const [key, value] of Object.entries(expectedData.find(r => r.userId === react.userId))) {
+                // console.log('checking', key, '=', value)
+                expect(react[key]).to.equal(value);
+            }
+          }
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect reacts data");
+      }
+  });
+}

@@ -1,0 +1,44 @@
+meta {
+  name: GET blogs -startIndex OOB & count-
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{BASE_URL}}/blogs?startIndex=999&count=3
+  body: none
+  auth: none
+}
+
+params:query {
+  startIndex: 999
+  count: 3
+}
+
+tests {
+  const expectedNumBlogs = 0;
+  const expectedCountBlogs = 35;
+  
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Valid blog list length", function() {
+      try {
+          var data = res.getBody();
+          expect(data.blogs.length).to.equal(expectedNumBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect number of blogs returned expected ${expectedNumBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+  
+  test("Valid game count", function() {
+      try {
+          var data = res.getBody();
+          expect(data.count).to.equal(expectedCountBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect blogs count expected ${expectedCountBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+  
+}

@@ -1,0 +1,21 @@
+meta {
+  name: GET blogs -invalid- -cityIds NaN-
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{BASE_URL}}/blogs?cityIds=NOT_A_PLATFORMID
+  body: none
+  auth: none
+}
+
+params:query {
+  cityIds: NOT_A_PLATFORMID
+}
+
+tests {
+  test("Status code is 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+}

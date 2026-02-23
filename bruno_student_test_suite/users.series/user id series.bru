@@ -1,0 +1,48 @@
+meta {
+  name: user id series
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/users/1/series
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Expected react data structure", function() {
+      try{
+          var data = res.getBody();
+          expect(data).to.be.an("array");
+          expect(data).to.not.be.empty;
+  
+          data.forEach(item => {
+              expect(item).to.be.a("string");
+          });    
+      } catch(err) {
+          expect.fail("INVALID RESPONSE");
+      }
+  });
+  
+  var expectedData = [
+    "Shopping like my life depends on it",
+    "Outdoor Adventures",
+    "Caffeine Fix"
+  ];
+  
+  test("Valid series data (unordered)", function() {
+      try{
+          var series = res.getBody();
+          expect(series).to.have.members(expectedData);
+          expect(series).to.have.length(expectedData.length);
+      } catch (err) {
+          console.log(err);
+          expect.fail("Incorrect reacts data");
+      }
+  });
+}

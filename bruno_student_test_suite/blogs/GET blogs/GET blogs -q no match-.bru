@@ -1,0 +1,42 @@
+meta {
+  name: GET blogs -q no match-
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{BASE_URL}}/blogs?q=NON_MATCHING_STRING
+  body: none
+  auth: none
+}
+
+params:query {
+  q: NON_MATCHING_STRING
+}
+
+tests {
+  const expectedNumBlogs = 0;
+  const expectedCountBlogs = 0;
+  
+  test("Status code is 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Valid blog list length", function() {
+      try {
+          var data = res.getBody();
+          expect(data.blogs.length).to.equal(expectedNumBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect number of blogs returned expected ${expectedNumBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+  
+  test("Valid blog count", function() {
+      try {
+          var data = res.getBody();
+          expect(data.count).to.equal(expectedCountBlogs);
+      } catch (err) {
+          expect.fail(`Incorrect blogs count expected ${expectedCountBlogs} got ${res.getBody().blogs.length}`);
+      }
+  });
+}
