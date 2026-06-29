@@ -1,6 +1,6 @@
-# SENG365 Assignment 1 API Server (Travel Blog Site)
+# SENG365 Wanderlog API Server
 
-The WanderLog Backend relies on creating a databasxe on the UC database. If you would like to see the frontend of Wanderlog without creating a backend see the wanderlog-frontend repository. 
+The WanderLog Backend relies on creating a database on the UC database. If you would like to see the frontend of Wanderlog without creating a backend see the wanderlog-frontend repository. 
 
 ## Running locally
 
