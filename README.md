@@ -1,5 +1,7 @@
 # SENG365 Assignment 1 API Server (Travel Blog Site)
 
+The WanderLog Backend relies on creating a databasxe on the UC database. If you would like to see the frontend of Wanderlog without creating a backend see the wanderlog-frontend repository. 
+
 ## Running locally
 
 1. Use `npm install` to populate the `node_modules/` directory with up-to-date packages
@@ -30,20 +32,6 @@ SENG365_MYSQL_DATABASE=abc123_s365
 ```
 _An `example.env` file is provided in the root directory of this project that you can rename and use as a template for your own._
 
-## Some notes about endpoint status codes
-
-The api spec provides several status codes that each endpoint can return. Apart from the 500 'Internal Server Error'
-each of these represents a flow that may be tested. Hopefully from the labs you have seen these status codes before and
-have an understanding of what each represents. A brief overview is provided in the table below.
-
-| Status Code | Status Message | Description                                    | Example                                                    |
-|:------------|----------------|------------------------------------------------|------------------------------------------------------------|
-| 200         | OK             | Request completed successfully                 | Successfully get blogs                                     |
-| 201         | Created        | Resources created successfully                 | Successfully create a blog                                 |
-| 400         | Bad Request    | The request failed due to client error         | Creating a blog without a request body                     |
-| 401         | Unauthorised   | The requested failed due invalid authorisation | Creating a blog without authorisation header               |
-| 403         | Forbidden      | The request is refused by the server           | Creating a blog using an existing name                     |
-| 404         | Not Found      | The requested item does not exist              | Trying to find information about a blog that doesn't exist |
 
 ## Final notes
 
